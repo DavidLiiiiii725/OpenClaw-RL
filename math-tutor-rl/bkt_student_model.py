@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 ZPD_LO = 0.40
 ZPD_HI = 0.70
 
-# Default BKT hyper-parameters (sensible K-12 math priors)
+_DENOMINATOR_EPSILON = 1e-12  # Minimum denominator magnitude for BKT Bayes update
 _P_KNOW0 = 0.30   # low prior: most KCs start un-mastered
 _P_LEARN = 0.10   # 10% chance of learning per practice trial
 _P_GUESS = 0.20   # 20% chance of guessing correctly when not mastered
@@ -110,7 +110,7 @@ class BKTStudentModel:
         # Bayes update
         numerator = p_obs_m * p
         denominator = numerator + p_obs_nm * (1.0 - p)
-        p_posterior = numerator / denominator if denominator > 1e-12 else p
+        p_posterior = numerator / denominator if denominator > _DENOMINATOR_EPSILON else p
 
         # Learning transition
         p_new = p_posterior + (1.0 - p_posterior) * kc.p_learn
@@ -163,11 +163,15 @@ class BKTStudentModel:
             "kcs": {k: asdict(v) for k, v in self._kcs.items()},
         }
 
+    def add_kc_state(self, kc_name: str, state: "KCState") -> None:
+        """Add or overwrite a KC state directly (used for deserialisation)."""
+        self._kcs[kc_name] = state
+
     @classmethod
     def from_dict(cls, data: dict) -> "BKTStudentModel":
         model = cls()
         for kc_name, kc_data in data.get("kcs", {}).items():
-            model._kcs[kc_name] = KCState(**kc_data)
+            model.add_kc_state(kc_name, KCState(**kc_data))
         return model
 
     def to_json(self) -> str:

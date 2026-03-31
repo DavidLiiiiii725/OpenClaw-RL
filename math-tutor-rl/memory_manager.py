@@ -206,7 +206,7 @@ def load_memory(base_dir: str, student_id: str):
             attempts = int(m.group(3))
             correct = int(m.group(4))
             kc_state = KCState(p_mastery=p_mastery, attempts=attempts, correct=correct)
-            model._kcs[kc_id] = kc_state  # type: ignore[attr-defined]
+            model.add_kc_state(kc_id, kc_state)
     return model
 
 

@@ -184,6 +184,10 @@ def verify_steps(response_text: str) -> float:
         c1, c2 = parsed[i], parsed[i + 1]
         try:
             from sympy import simplify, S
+            # Avoid division by zero; fall through to parseable-step credit
+            if c2 == S.Zero:
+                verified += 1
+                continue
             # Check if c1 and c2 are proportional (c1/c2 = constant ≠ 0)
             ratio = simplify(c1 / c2)
             if ratio.is_number and ratio != S.Zero:
@@ -234,6 +238,8 @@ def detect_redundant_steps(response_text: str) -> float:
         for prev in constraints[:i]:
             try:
                 from sympy import simplify, S
+                if prev == S.Zero:
+                    continue
                 ratio = simplify(c / prev)
                 if ratio.is_number and ratio != S.Zero:
                     redundant += 1
